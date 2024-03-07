@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+    <title>Snake Game</title>
+</head>
+
+<body>
+    <canvas id="canvasLeft" width="400" height="400" style="filter: grayscale(.7);"></canvas>
+    <canvas id="canvasMain" width="400" height="400"></canvas>
+    <canvas id="canvasRight" width="400" height="400" style="filter: grayscale(.7);"></canvas>
+
+    <script>
+        let canvasLeft = document.getElementById('canvasLeft');
+        let ctxLeft = canvasLeft.getContext('2d');
+
+        let canvasMain = document.getElementById('canvasMain');
+        let ctxMain = canvasMain.getContext('2d');
+
+        let canvasRight = document.getElementById('canvasRight');
+        let ctxRight = canvasRight.getContext('2d');
+
+        const canvasSize = 20; // tamanho do quadrado da cobrinha
+        const gridSize = canvasLeft.width / canvasSize; // número de quadrados em uma linha/coluna
+        
+        let gameOver = true;
+        let snake = [{ x: 2, y: 2 }];
+        let direction = 'right';
+        let food = generateFood();
+
+        let obstaclesLeft = generateObstacles();
+        let obstaclesMain = generateObstacles();
+        let obstaclesRight = generateObstacles();
+
+        function generateObstacles() {
+            const obstacles = [];
+            for (let i = 0; i < 5; i++) {
+                obstacles.push({ x: Math.floor(Math.random() * gridSize), y: Math.floor(Math.random() * gridSize) });
+            }
+            return obstacles;
+        }
+
+        function drawCanvas(ctx, obstacles) {
+            ctx.clearRect(0, 0, canvasLeft.width, canvasLeft.height);
+            drawObstacles(ctx, obstacles);
+            drawSnake(ctx);
+            drawFood(ctx);
+        }
+
+        function drawObstacles(ctx, obstacles) {
+            ctx.fillStyle = 'red';
+            obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x * canvasSize, obstacle.y * canvasSize, canvasSize, canvasSize);
+            });
+        }
+
+        function drawSnake(ctx) {
+            ctx.fillStyle = 'green';
+            snake.forEach(segment => {
+                ctx.fillRect(segment.x * canvasSize, segment.y * canvasSize, canvasSize, canvasSize);
+            });
+        }
+
+        function drawFood(ctx) {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(food.x * canvasSize, food.y * canvasSize, canvasSize, canvasSize);
+        }
+
+        function generateFood() {
+            return { x: Math.floor(Math.random() * gridSize), y: Math.floor(Math.random() * gridSize) };
+        }
+
+        function checkCollision() {
+            const head = snake[0];
+
+            // Verificar colisão com as bordas
+            if (head.x < 0 || head.x >= gridSize || head.y < 0 || head.y >= gridSize) {
+                return true;
+            }
+
+            // Verificar colisão com a própria cobrinha
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    return true;
+                }
+            }
+
+            // Verificar colisão com obstáculos
+            const obstacles = obstaclesMain;
+
+            for (let i = 0; i < obstacles.length; i++) {
+                if (head.x === obstacles[i].x && head.y === obstacles[i].y) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function update() {
+            const head = { ...snake[0] };
+
+            // Atualizar a posição da cabeça com base na direção
+            if (direction === 'up') head.y--;
+            else if (direction === 'down') head.y++;
+            else if (direction === 'left') head.x--;
+            else if (direction === 'right') head.x++;
+
+            // Verificar colisão com comida
+            if (head.x === food.x && head.y === food.y) {
+                snake.unshift({});
+                food = generateFood();
+            }
+
+            // Atualizar a posição da cobrinha
+            snake.unshift(head);
+            snake.pop();
+
+            // Verificar colisão
+            if (checkCollision()) {
+                alert('Game Over!');
+                resetGame();
+            }
+
+            // Desenhar os Canvas
+            drawCanvas(ctxLeft, obstaclesLeft);
+            drawCanvas(ctxMain, obstaclesMain);
+            drawCanvas(ctxRight, obstaclesRight);
+
+            
+        }
+
+        function drawAllCanvas(){
+            drawCanvas(ctxLeft, obstaclesLeft);
+            drawCanvas(ctxMain, obstaclesMain);
+            drawCanvas(ctxRight, obstaclesRight);
+        }
+
+        function resetGame() {
+            snake = [{ x: 2, y: 2 }];
+            direction = 'right';
+            food = generateFood();
+            obstaclesLeft = generateObstacles();
+            obstaclesMain = generateObstacles();
+            obstaclesRight = generateObstacles();
+        }
+
+        document.addEventListener('keydown', (event) => {
+            let [l, m, r, ol, om, or] = [ctxLeft, ctxMain, ctxRight, obstaclesLeft, obstaclesMain, obstaclesRight]
+            switch (event.key) {
+                case 'ArrowUp':
+                    if(direction !== 'down')
+                    direction = 'up';
+                    break;
+                case 'ArrowDown':
+                    if (direction !== 'up')
+                    direction = 'down';
+                    break;
+                case 'ArrowLeft':
+                    if (direction !== 'right')
+                    direction = 'left';
+                    break;
+                case 'ArrowRight':
+                    if (direction !== 'left')
+                    direction = 'right';
+                    break;
+                case 'a':
+                    obstaclesLeft = om;
+                    obstaclesMain = ol;
+                    drawAllCanvas();
+                    break;
+                case 'd':
+                    obstaclesRight = om;
+                    obstaclesMain = or;
+                    drawAllCanvas();
+                    break;
+            }
+        });
+
+        const start = setInterval(update, 500);
+    </script>
+</body>
+
+</html>
